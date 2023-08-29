@@ -1,0 +1,31 @@
+name: Deploy feauture branches to nonprod s3 bucket
+
+on:
+  push:
+    branches:
+      - feature*
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    env:
+      BUCKET_NAME: cfst-3457-9fd690e05653c7d6aa4c88f94-nonprodbucket-veeyq8r1d3mv
+    steps:
+      - name: checkout code
+        uses: actions/checkout@v2
+      - name: configure aws cli
+        uses: aws-actions/configure-aws-credentials@v1
+        with:
+          aws-access-key-id: {{ secret.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: {{ secrets.AWS_SECRETKEY_ID }}
+          aws-region: us-east-1
+      - name: set up node js 
+        uses: actions/setup-node@v2
+        with:
+          node-version: 14
+      - name: build site
+        run: |
+          npm ci 
+          npm run build 
+      - name: deploy files to bucket 
+        run: aws s3 cp public s3://${{ env.BUCKET_NAME }}/ --recursive --acl public-read
